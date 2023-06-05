@@ -1,0 +1,42 @@
+name: Trigger auto deployment for monga
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ master ]
+    paths:
+    - 'bullseye/**'
+    - '.github/workflows/monga-AutoDeployTrigger-d9d5c4ce-26ea-4f4e-87dc-e8d902b93ddb.yml'
+
+  # Allow mannually trigger 
+  workflow_dispatch:
+      
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.MONGA_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}bullseye 
+          registryUrl: monga.azurecr.io
+          registryUsername: ${{ secrets.MONGA_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.MONGA_REGISTRY_PASSWORD }}
+          containerAppName: monga
+          resourceGroup: rg-monga
+          imageToBuild: monga.azurecr.io/csgo-sourcemod:${{ github.sha }}
+          dockerfilePath: Dockerfile
+
+     
+
